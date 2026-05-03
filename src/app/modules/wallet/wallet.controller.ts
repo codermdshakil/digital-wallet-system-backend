@@ -44,7 +44,7 @@ const getMyBalance = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Wallet Operations (User)
+// User + Agent  Wallet Operations  
 
 const addMoney = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload;
@@ -156,10 +156,42 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+// Agent Wallet Operations 
+
+ const cashIn = catchAsync(async (req, res) => {
+
+  const user = req.user as JwtPayload
+
+  const { amount, agentWalletId, userWalletId } = req.body;
+
+  const result = await WalletService.cashIn({
+    amount,
+    agentWalletId,
+    userWalletId,
+    userId: user.userId.toString(),
+  });
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Cash-in successful",
+    data: result,
+  });
+});
+
+
+
 export const WalletController = {
+  
   getMyWallet,
   getMyBalance,
+
+  // User + Agent Wallet Operations
   addMoney,
   sendMoney,
   withdraw,
+
+  // Agent Wallet Operation
+  cashIn
 };

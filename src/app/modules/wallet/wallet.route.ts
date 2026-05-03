@@ -3,7 +3,7 @@ import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { Role } from "../user/user.interface";
 import { WalletController } from "./wallet.controller";
-import { createAddMoneyZodSchema, sendMoneyZodSchema, withdrawZodSchema } from "./wallet.validation";
+import { cashInZodSchema, createAddMoneyZodSchema, sendMoneyZodSchema, withdrawZodSchema } from "./wallet.validation";
 
 const router = Router();
 
@@ -30,18 +30,18 @@ router.get(
 );
 
 
-// Wallet Operations (User)
+// User + Agent  Wallet Operations 
 
 router.post(
   "/add-money",
-  checkAuth(Role.USER),
+  checkAuth(Role.USER, Role.AGENT),
   validateRequest(createAddMoneyZodSchema),
   WalletController.addMoney
 );
 
 router.post(
   "/send-money",
-  checkAuth(Role.USER),
+  checkAuth(Role.USER, Role.AGENT),
   validateRequest(sendMoneyZodSchema),
   WalletController.sendMoney
 );
@@ -49,9 +49,17 @@ router.post(
 
 router.post(
   "/withdraw",
-  checkAuth(Role.USER),
+  checkAuth(Role.USER, Role.AGENT),
   validateRequest(withdrawZodSchema),
   WalletController.withdraw
+);
+
+// Agent Wallet Operations 
+router.post(
+  "/cash-in",
+  checkAuth(Role.AGENT),
+  validateRequest(cashInZodSchema),
+  WalletController.cashIn
 );
 
 

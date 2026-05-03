@@ -42,7 +42,7 @@ const getMyBalance = async (userId: string) => {
 };
 
 
-// Wallet Operations (User)
+//  User + Agent  Wallet Operations 
 
 const addMoney = async (payload: {
   amount: number;
@@ -264,6 +264,75 @@ const withdraw= async (payload: {
 };
 
 
+// Agent  Wallet Operations 
+
+const cashIn = async (payload: {
+  amount: number;
+  agentWalletId: string;
+  userWalletId: string;
+  userId: string;
+}) => {
+  const { amount, agentWalletId, userWalletId, userId } = payload;
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const agentWallet = await Wallet.findById(agentWalletId).session(session);
+    const userWallet = await Wallet.findById(userWalletId).session(session);
+
+    if (!agentWallet || !userWallet) {
+      throw new AppError(404, "Wallet not found");
+    }
+
+    if (agentWallet.userId.toString() !== userId) {
+      throw new AppError(403, "Unauthorized agent wallet");
+    }
+
+    if (agentWallet.status !== "ACTIVE" || userWallet.status !== "ACTIVE") {
+      throw new AppError(400, "Wallet blocked");
+    }
+
+    if (agentWallet.balance < amount) {
+      throw new AppError(400, "Agent has insufficient balance");
+    }
+
+    // Update balances
+    agentWallet.balance -= amount;
+    userWallet.balance += amount;
+
+    await agentWallet.save({ session });
+    await userWallet.save({ session });
+
+    // 🧾 Transaction
+    const txn = await Transaction.create(
+      [
+        {
+          type: TransactionType.CASH_IN,
+          amount,
+          senderWalletId: agentWallet._id,
+          receiverWalletId: userWallet._id,
+          initiatedBy: userId,
+          status: TransactionStatus.SUCCESS,
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return { agentWallet, userWallet, transaction: txn[0] };
+    
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
+};
+
+
 
 export const WalletService = {
   // User Wallet
@@ -273,5 +342,8 @@ export const WalletService = {
   // Wallet Operations (User)
   addMoney,
   sendMoney,
-  withdraw
+  withdraw,
+
+  // Agent wallet Operations
+  cashIn 
 }

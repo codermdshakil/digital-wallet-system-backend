@@ -30,6 +30,19 @@ export const withdrawZodSchema = z.object({
   senderWalletId: objectIdSchema,
 });
 
+// CASH IN 
+export const cashInZodSchema = z.object({
+  amount: z.number().min(1, "Amount must be greater than 0"),
+  agentWalletId: objectIdSchema,
+  userWalletId: objectIdSchema,
+});
+
+// CASH OUT 
+export const cashOutZodSchema = z.object({
+  amount: z.number().min(1, "Amount must be greater than 0"),
+  agentWalletId: objectIdSchema,
+  userWalletId: objectIdSchema,
+});
 
 
 
