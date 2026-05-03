@@ -180,6 +180,26 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+ const cashOut = catchAsync(async (req, res) => {
+
+  const user = req.user as JwtPayload
+
+  const { amount, agentWalletId, userWalletId } = req.body;
+
+  const result = await WalletService.cashOut({
+    amount,
+    agentWalletId,
+    userWalletId,
+    userId: user.userId.toString(),
+  });
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Cash-out successful",
+    data: result,
+  });
+});
 
 
 export const WalletController = {
@@ -193,5 +213,6 @@ export const WalletController = {
   withdraw,
 
   // Agent Wallet Operation
-  cashIn
+  cashIn,
+  cashOut
 };

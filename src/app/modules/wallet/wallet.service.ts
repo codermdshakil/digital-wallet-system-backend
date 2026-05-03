@@ -1,15 +1,17 @@
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import AppError from "../../errorHandlers/AppError";
-import { TransactionStatus, TransactionType } from "../transaction/transaction.interface";
+import {
+  TransactionStatus,
+  TransactionType,
+} from "../transaction/transaction.interface";
 import { Transaction } from "../transaction/transaction.model";
 import { Wallet } from "./wallet.model";
 
 // User Wallet
 
-// get wallet 
+// get wallet
 const getMyWallet = async (userId: string) => {
-
   const wallet = await Wallet.findOne({ userId });
 
   if (!wallet) {
@@ -25,7 +27,6 @@ const getMyWallet = async (userId: string) => {
 
 // check balance
 const getMyBalance = async (userId: string) => {
-
   const wallet = await Wallet.findOne({ userId }).select("balance status");
 
   if (!wallet) {
@@ -41,8 +42,7 @@ const getMyBalance = async (userId: string) => {
   };
 };
 
-
-//  User + Agent  Wallet Operations 
+//  User + Agent  Wallet Operations
 
 const addMoney = async (payload: {
   amount: number;
@@ -85,7 +85,7 @@ const addMoney = async (payload: {
           status: TransactionStatus.SUCCESS,
         },
       ],
-      { session }
+      { session },
     );
 
     await session.commitTransaction();
@@ -95,7 +95,6 @@ const addMoney = async (payload: {
       wallet,
       transaction: transaction[0],
     };
-
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -118,7 +117,8 @@ const sendMoney = async (payload: {
 
     // 1. Fetch wallets
     const senderWallet = await Wallet.findById(senderWalletId).session(session);
-    const receiverWallet = await Wallet.findById(receiverWalletId).session(session);
+    const receiverWallet =
+      await Wallet.findById(receiverWalletId).session(session);
 
     if (!senderWallet) {
       throw new AppError(StatusCodes.NOT_FOUND, "Sender wallet not found");
@@ -171,7 +171,7 @@ const sendMoney = async (payload: {
           status: TransactionStatus.SUCCESS,
         },
       ],
-      { session }
+      { session },
     );
 
     // 8. Commit
@@ -183,7 +183,6 @@ const sendMoney = async (payload: {
       receiverWallet,
       transaction: transaction[0],
     };
-
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -191,7 +190,7 @@ const sendMoney = async (payload: {
   }
 };
 
-const withdraw= async (payload: {
+const withdraw = async (payload: {
   amount: number;
   senderWalletId: string;
   userId: string;
@@ -245,7 +244,7 @@ const withdraw= async (payload: {
           status: TransactionStatus.SUCCESS,
         },
       ],
-      { session }
+      { session },
     );
 
     // ✅ 8. Commit
@@ -263,8 +262,7 @@ const withdraw= async (payload: {
   }
 };
 
-
-// Agent  Wallet Operations 
+// Agent  Wallet Operations
 
 const cashIn = async (payload: {
   amount: number;
@@ -317,14 +315,13 @@ const cashIn = async (payload: {
           status: TransactionStatus.SUCCESS,
         },
       ],
-      { session }
+      { session },
     );
 
     await session.commitTransaction();
     session.endSession();
 
     return { agentWallet, userWallet, transaction: txn[0] };
-    
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
@@ -332,7 +329,85 @@ const cashIn = async (payload: {
   }
 };
 
+const cashOut = async (payload: {
+  amount: number;
+  agentWalletId: string;
+  userWalletId: string;
+  userId: string;
+}) => {
+  const { amount, agentWalletId, userWalletId, userId } = payload;
 
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const agentWallet = await Wallet.findById(agentWalletId).session(session);
+    const userWallet = await Wallet.findById(userWalletId).session(session);
+
+    if (!agentWallet || !userWallet) {
+      throw new AppError(404, "Wallet not found");
+    }
+
+    if (agentWallet.userId.toString() !== userId) {
+      throw new AppError(403, "Unauthorized agent wallet");
+    }
+
+    if (agentWallet.status !== "ACTIVE" || userWallet.status !== "ACTIVE") {
+      throw new AppError(400, "Wallet blocked");
+    }
+
+    // CASHOUT FEE CALCULATION
+    const fee = Math.round(
+      Math.floor(amount / 1000) * 20 + (amount % 1000) * 0.02,
+    );
+
+    const totalDeduct = amount + fee;
+
+    // balance check (VERY IMPORTANT)
+    if (userWallet.balance < totalDeduct) {
+      throw new AppError(400, `Insufficient balance. Required: ${totalDeduct}`);
+    }
+
+    // Update balances
+    userWallet.balance -= totalDeduct;
+    agentWallet.balance += amount; // agent gets only amount
+
+    await userWallet.save({ session });
+    await agentWallet.save({ session });
+
+    // Transaction
+    const txn = await Transaction.create(
+      [
+        {
+          type: TransactionType.CASH_OUT,
+          amount,
+          fee, // ✅ store fee
+          senderWalletId: userWallet._id,
+          receiverWalletId: agentWallet._id,
+          initiatedBy: userId,
+          status: TransactionStatus.SUCCESS,
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return {
+      agentWallet,
+      userWallet,
+      fee,
+      totalDeduct,
+      transaction: txn[0],
+    };
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
+};
 
 export const WalletService = {
   // User Wallet
@@ -345,5 +420,6 @@ export const WalletService = {
   withdraw,
 
   // Agent wallet Operations
-  cashIn 
-}
+  cashIn,
+  cashOut,
+};
