@@ -1,24 +1,44 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { JwtPayload } from "jsonwebtoken";
+import AppError from "../../errorHandlers/AppError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
+import { WalletService } from "./wallet.service";
 
-const addMoney = catchAsync(async (req: Request, res: Response) => {
+ 
 
+export const addMoney = catchAsync(async (req: Request, res: Response) => {
 
-  const user = req.user;
+  const user = req.user as JwtPayload;
 
-  // const payload ={
+  if (!user.userId) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized access");
+  }
 
-  // }
+  const { amount, receiverWalletId } = req.body;
 
-  // const result = await WalletService.addMoney();
+  // basic guard (Zod থাকলে middleware-এ হবে, তবুও safety)
+  if (!amount || !receiverWalletId) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Amount and receiverWalletId are required"
+    );
+  }
+
+  const payload = {
+    amount,
+    receiverWalletId,
+    userId: user.userId.toString(),
+  };
+
+  const result = await WalletService.addMoney(payload);
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.CREATED,
-    message: "Money Added Successfully",
-    // data:result
+    message: "Money added successfully",
+    data: result,
   });
 });
 

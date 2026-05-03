@@ -1,5 +1,9 @@
 import { Router } from "express";
+import { checkAuth } from "../../middlewares/checkAuth";
+import { validateRequest } from "../../middlewares/validateRequest";
+import { Role } from "../user/user.interface";
 import { WalletController } from "./wallet.controller";
+import { createAddMoneyZodSchema } from "./wallet.validation";
 
 const router = Router();
 
@@ -12,8 +16,12 @@ const router = Router();
 // cash-out
 
 
-router.post("/add-money", WalletController.addMoney)
-
+router.post(
+  "/add-money",
+  checkAuth(Role.USER),
+  validateRequest(createAddMoneyZodSchema),
+  WalletController.addMoney
+);
 
 
 
