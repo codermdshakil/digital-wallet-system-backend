@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import express, { Request, Response } from "express";
 import expressSession from "express-session";
 import morgan from "morgan";
@@ -23,6 +24,7 @@ app.use(morgan("dev"));
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(cookieParser());
 app.use(express.urlencoded({extended:true})) // this middleware for formdata
 
 app.use("/api/v1", router);
