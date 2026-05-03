@@ -5,8 +5,45 @@ import { TransactionStatus, TransactionType } from "../transaction/transaction.i
 import { Transaction } from "../transaction/transaction.model";
 import { Wallet } from "./wallet.model";
 
+// User Wallet
 
- 
+// get wallet 
+const getMyWallet = async (userId: string) => {
+
+  const wallet = await Wallet.findOne({ userId });
+
+  if (!wallet) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+  }
+
+  if (wallet.status !== "ACTIVE") {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Wallet is blocked");
+  }
+
+  return wallet;
+};
+
+// check balance
+const getMyBalance = async (userId: string) => {
+
+  const wallet = await Wallet.findOne({ userId }).select("balance status");
+
+  if (!wallet) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found");
+  }
+
+  if (wallet.status !== "ACTIVE") {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Wallet is blocked");
+  }
+
+  return {
+    balance: wallet.balance,
+  };
+};
+
+
+// Wallet Operations (User)
+
 const addMoney = async (payload: {
   amount: number;
   receiverWalletId: string;
@@ -154,7 +191,7 @@ const sendMoney = async (payload: {
   }
 };
 
-export const withdraw= async (payload: {
+const withdraw= async (payload: {
   amount: number;
   senderWalletId: string;
   userId: string;
@@ -229,6 +266,11 @@ export const withdraw= async (payload: {
 
 
 export const WalletService = {
+  // User Wallet
+  getMyWallet,
+  getMyBalance,
+
+  // Wallet Operations (User)
   addMoney,
   sendMoney,
   withdraw

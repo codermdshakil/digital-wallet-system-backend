@@ -6,12 +6,47 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { WalletService } from "./wallet.service";
 
- 
+// User Wallet
+
+const getMyWallet = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as JwtPayload;
+
+  if (!user || !user.userId) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized access");
+  }
+
+  const result = await WalletService.getMyWallet(user.userId.toString());
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Wallet retrieved successfully",
+    data: result,
+  });
+});
+
+const getMyBalance = catchAsync(async (req: Request, res: Response) => {
+
+  const user = req.user as JwtPayload;
+
+
+  if (!user || !user.userId) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized access");
+  }
+
+  const result = await WalletService.getMyBalance(user.userId.toString());
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Balance retrieved successfully",
+    data: result,
+  });
+});
 
 // Wallet Operations (User)
 
 const addMoney = catchAsync(async (req: Request, res: Response) => {
-
   const user = req.user as JwtPayload;
 
   if (!user.userId) {
@@ -24,7 +59,7 @@ const addMoney = catchAsync(async (req: Request, res: Response) => {
   if (!amount || !receiverWalletId) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      "Amount and receiverWalletId are required"
+      "Amount and receiverWalletId are required",
     );
   }
 
@@ -45,7 +80,6 @@ const addMoney = catchAsync(async (req: Request, res: Response) => {
 });
 
 const sendMoney = catchAsync(async (req: Request, res: Response) => {
-
   const user = req.user as JwtPayload;
 
   // Auth check
@@ -59,7 +93,7 @@ const sendMoney = catchAsync(async (req: Request, res: Response) => {
   if (!amount || !senderWalletId || !receiverWalletId) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      "amount, senderWalletId and receiverWalletId are required"
+      "amount, senderWalletId and receiverWalletId are required",
     );
   }
 
@@ -67,7 +101,7 @@ const sendMoney = catchAsync(async (req: Request, res: Response) => {
   if (senderWalletId === receiverWalletId) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      "Cannot send money to your own wallet"
+      "Cannot send money to your own wallet",
     );
   }
 
@@ -91,8 +125,7 @@ const sendMoney = catchAsync(async (req: Request, res: Response) => {
 });
 
 const withdraw = catchAsync(async (req: Request, res: Response) => {
-
-  const user = req.user  as JwtPayload;
+  const user = req.user as JwtPayload;
 
   if (!user || !user.userId) {
     throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized access");
@@ -103,7 +136,7 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
   if (!amount || !senderWalletId) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      "amount and senderWalletId are required"
+      "amount and senderWalletId are required",
     );
   }
 
@@ -123,11 +156,10 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
-
-
 export const WalletController = {
+  getMyWallet,
+  getMyBalance,
   addMoney,
   sendMoney,
-  withdraw
+  withdraw,
 };

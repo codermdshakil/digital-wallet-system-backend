@@ -15,7 +15,19 @@ const router = Router();
 // cash-in
 // cash-out
 
+// User Wallet
 
+router.get(
+  "/me",
+  checkAuth(Role.USER, Role.ADMIN, Role.AGENT),
+  WalletController.getMyWallet
+);
+
+router.get(
+  "/balance",
+  checkAuth(Role.USER, Role.ADMIN, Role.AGENT),
+  WalletController.getMyBalance
+);
 
 
 // Wallet Operations (User)
