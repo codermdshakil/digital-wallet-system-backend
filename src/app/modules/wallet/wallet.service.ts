@@ -143,7 +143,10 @@ const sendMoney = async (payload: {
     }
 
     // 4. Fee calculation (example)
-    const fee = Math.floor(amount * 0.01); // 1% fee
+    // FEE CALCULATION 2% fee
+    const fee = Math.round(
+      Math.floor(amount / 1000) * 20 + (amount % 1000) * 0.02,
+    );
     const totalDeduct = amount + fee;
 
     // 5. Balance check
@@ -219,8 +222,11 @@ const withdraw = async (payload: {
       throw new AppError(StatusCodes.BAD_REQUEST, "Wallet is blocked");
     }
 
-    // 4. Fee calculation (example: 1%)
-    const fee = Math.floor(amount * 0.01);
+    // CASHOUT FEE CALCULATION - fee 2%
+    const fee = Math.round(
+      Math.floor(amount / 1000) * 20 + (amount % 1000) * 0.02,
+    );
+    
     const totalDeduct = amount + fee;
 
     // 5. Balance check
