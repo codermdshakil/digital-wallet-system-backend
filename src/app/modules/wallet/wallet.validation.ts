@@ -1,11 +1,30 @@
 import z from "zod";
+import { objectIdSchema } from "../../helpers/objectIdValidator";
 import { Status } from "./wallet.interface";
 
-
+// Add money zod schema
 export const createAddMoneyZodSchema = z.object({
   amount: z.number().min(1),
   receiverWalletId: z.string(),
 });
+
+// Send money zod schema
+export const sendMoneyZodSchema = z
+  .object({
+    amount: z
+      .number({ message: "Amount must be a number" })
+      .min(1, { message: "Amount must be greater than 0" }),
+
+    senderWalletId: objectIdSchema,
+    receiverWalletId: objectIdSchema,
+  })
+  .refine(
+    (data) => data.senderWalletId !== data.receiverWalletId,
+    {
+      message: "Cannot send money to your own wallet",
+      path: ["receiverWalletId"],
+    }
+  );
 
 
 export const createWalletZodSchema = z.object({

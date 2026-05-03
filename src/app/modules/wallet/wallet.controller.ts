@@ -8,7 +8,7 @@ import { WalletService } from "./wallet.service";
 
  
 
-export const addMoney = catchAsync(async (req: Request, res: Response) => {
+const addMoney = catchAsync(async (req: Request, res: Response) => {
 
   const user = req.user as JwtPayload;
 
@@ -42,6 +42,56 @@ export const addMoney = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const sendMoney = catchAsync(async (req: Request, res: Response) => {
+
+  const user = req.user as JwtPayload;
+
+  // 🔐 Auth check
+  if (!user || !user.userId) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized access");
+  }
+
+  const { amount, senderWalletId, receiverWalletId } = req.body;
+
+  // Basic validation (Zod থাকলে middleware-এ হবে)
+  if (!amount || !senderWalletId || !receiverWalletId) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "amount, senderWalletId and receiverWalletId are required"
+    );
+  }
+
+  // Prevent self-transfer (extra safety)
+  if (senderWalletId === receiverWalletId) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Cannot send money to your own wallet"
+    );
+  }
+
+  const payload = {
+    amount,
+    senderWalletId,
+    receiverWalletId,
+    userId: user.userId.toString(),
+  };
+
+  // Service call
+  const result = await WalletService.sendMoney(payload);
+
+  // Response
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Money sent successfully",
+    data: result,
+  });
+});
+
+
+
 export const WalletController = {
   addMoney,
+  sendMoney
 };
