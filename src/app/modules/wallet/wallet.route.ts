@@ -3,7 +3,7 @@ import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { Role } from "../user/user.interface";
 import { WalletController } from "./wallet.controller";
-import { createAddMoneyZodSchema, sendMoneyZodSchema } from "./wallet.validation";
+import { createAddMoneyZodSchema, sendMoneyZodSchema, withdrawZodSchema } from "./wallet.validation";
 
 const router = Router();
 
@@ -15,6 +15,10 @@ const router = Router();
 // cash-in
 // cash-out
 
+
+
+
+// Wallet Operations (User)
 
 router.post(
   "/add-money",
@@ -29,6 +33,15 @@ router.post(
   validateRequest(sendMoneyZodSchema),
   WalletController.sendMoney
 );
+
+
+router.post(
+  "/withdraw",
+  checkAuth(Role.USER),
+  validateRequest(withdrawZodSchema),
+  WalletController.withdraw
+);
+
 
 
 

@@ -154,7 +154,82 @@ const sendMoney = async (payload: {
   }
 };
 
+export const withdraw= async (payload: {
+  amount: number;
+  senderWalletId: string;
+  userId: string;
+}) => {
+  const { amount, senderWalletId, userId } = payload;
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    // 1. Fetch wallet
+    const wallet = await Wallet.findById(senderWalletId).session(session);
+
+    if (!wallet) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Wallet not found!");
+    }
+
+    // 2. Ownership check
+    if (wallet.userId.toString() !== userId) {
+      throw new AppError(StatusCodes.FORBIDDEN, "Unauthorized wallet access");
+    }
+
+    // 3. Status check
+    if (wallet.status !== "ACTIVE") {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Wallet is blocked");
+    }
+
+    // 4. Fee calculation (example: 1%)
+    const fee = Math.floor(amount * 0.01);
+    const totalDeduct = amount + fee;
+
+    // 5. Balance check
+    if (wallet.balance < totalDeduct) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance");
+    }
+
+    // 6. Update balance
+    wallet.balance -= totalDeduct;
+    await wallet.save({ session });
+
+    // 7. Create transaction
+    const transaction = await Transaction.create(
+      [
+        {
+          type: TransactionType.WITHDRAW,
+          amount,
+          fee,
+          senderWalletId: wallet._id,
+          initiatedBy: userId,
+          status: TransactionStatus.SUCCESS,
+        },
+      ],
+      { session }
+    );
+
+    // ✅ 8. Commit
+    await session.commitTransaction();
+    session.endSession();
+
+    return {
+      wallet,
+      transaction: transaction[0],
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+
+
 export const WalletService = {
   addMoney,
-  sendMoney
+  sendMoney,
+  withdraw
 }
