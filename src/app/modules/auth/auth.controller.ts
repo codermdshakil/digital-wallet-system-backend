@@ -15,6 +15,7 @@ import { AuthService } from "./auth.service";
 
 // create user and get access and refresh token
 const credentialsLogin = catchAsync(
+
   async (req: Request, res: Response, next: NextFunction) => {
     // const loginInfo = await AuthServices.credentialsLogin(req.body);
 
@@ -30,9 +31,6 @@ const credentialsLogin = catchAsync(
       }
 
       const userTokens = await createUserTokens(user);
-
-      // delete password
-      // delete user.toObject().password;
 
       const { password: pass, ...rest } = user.toObject();
 
@@ -53,9 +51,25 @@ const credentialsLogin = catchAsync(
   },
 );
 
+
+// logout
+const logout = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // clear accessToken and refreshToken from cookie
+    clearCookie(res);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "User Logout Succcessfully!!",
+    });
+  },
+);
+
 // using refresh-token get new accessToken
 const getNewAccessToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+
     // from cookies get refreshToken
     const refreshToken = req.cookies.refreshToken;
 
@@ -80,24 +94,13 @@ const getNewAccessToken = catchAsync(
   },
 );
 
-// logout
-const logout = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    // clear accessToken and refreshToken from cookie
-    clearCookie(res);
-
-    sendResponse(res, {
-      success: true,
-      statusCode: StatusCodes.OK,
-      message: "User Logout Succcessfully!!",
-    });
-  },
-);
 
 // change password
 const changePassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+
     const decodedToken = req.user;
+    
     const oldPassword = req.body.oldPassword;
     const newPassword = req.body.newPassword;
 
@@ -200,6 +203,5 @@ export const AuthController = {
   setPassword,
   resetPassword,
   googleCallbackController,
-
 }
 

@@ -10,10 +10,12 @@ import { verifyToken } from "../utils/jwt";
 
 export const checkAuth =
   (...AuthRoles: string[]) =>
+
   async (req: Request, res: Response, next: NextFunction) => {
+
     try {
       // 1. get access token
-      const accessToken = req.headers.authorization;
+     const accessToken = req.cookies.accessToken;
 
       // handle error
       if (!accessToken) {
@@ -21,7 +23,7 @@ export const checkAuth =
       }
 
       // 2. get verified token
-      const verifiedToken = verifyToken(  accessToken, envVars.JWT_ACCESS_SECRET,) as JwtPayload;
+      const verifiedToken = verifyToken(accessToken, envVars.JWT_ACCESS_SECRET,) as JwtPayload;
 
       // user validation check
 

@@ -1,6 +1,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import bcryptjs from "bcrypt";
 import { StatusCodes } from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
@@ -175,6 +176,7 @@ const setPassword = async (userId: string, plainPassword: string) => {
 
 const resetPassword = async (payload:Record<string, any>, decodedToken: JwtPayload) => {
 
+
   if(payload.id != decodedToken.userId){
     throw new AppError(StatusCodes.BAD_REQUEST, "You can't reset your Password!");
   }
@@ -185,9 +187,11 @@ const resetPassword = async (payload:Record<string, any>, decodedToken: JwtPaylo
       throw new AppError(StatusCodes.BAD_REQUEST, "User not Found!");
   }
 
+
   const hashPassword = await bcryptjs.hash(payload.newPassword, Number(envVars.BCRYPT_SALT));
 
   isUserExist.password = hashPassword;
+
   await isUserExist.save();
 
   return {} 
