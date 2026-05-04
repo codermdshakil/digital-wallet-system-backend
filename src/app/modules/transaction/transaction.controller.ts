@@ -7,7 +7,7 @@ import { Wallet } from "../wallet/wallet.model";
 import { TransactionService } from "./transaction.service";
 
 const getMyTransactions = catchAsync(async (req: Request, res: Response) => {
-  
+
   const user = req.user as JwtPayload;
 
   if (!user || !user.userId) {
@@ -64,7 +64,31 @@ const getSingleTransaction = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+ const getAgentTransactions = catchAsync(
+  async (req: Request, res: Response) => {
+
+    const user = req.user as JwtPayload;
+
+    if (!user || !user.userId) {
+      throw new AppError(401, "Unauthorized");
+    }
+
+    const result = await TransactionService.getAgentTransactions(
+      user.userId.toString(),
+      req.query
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Agent transactions retrieved successfully",
+      data: result,
+    });
+  }
+);
+
 export const TransactionController = {
   getMyTransactions,
   getSingleTransaction,
+  getAgentTransactions
 };

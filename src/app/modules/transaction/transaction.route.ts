@@ -5,6 +5,8 @@ import { TransactionController } from "./transaction.controller";
 
 const router = Router();
 
+// User + Agent
+
 router.get(
   "/me",
   checkAuth(Role.USER, Role.AGENT),
@@ -12,10 +14,20 @@ router.get(
 );
 
 router.get(
+  "/agent",
+  checkAuth(Role.AGENT),
+  TransactionController.getAgentTransactions
+);
+
+router.get(
   "/:id",
   checkAuth(Role.USER, Role.AGENT),
   TransactionController.getSingleTransaction
 );
+
+
+
+
 
 
 export const TransactionRoutes = router;
