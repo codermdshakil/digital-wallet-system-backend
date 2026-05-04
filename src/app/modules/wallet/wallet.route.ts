@@ -69,6 +69,26 @@ router.post(
   WalletController.cashOut
 );
 
+// Admin wallet operations
+
+router.patch(
+  "/block/:id",
+  checkAuth(Role.ADMIN),
+  WalletController.blockWallet
+);
+
+router.patch(
+  "/unblock/:id",
+  checkAuth(Role.ADMIN),
+  WalletController.unblockWallet
+);
+
+router.get(
+  "/",
+  checkAuth(Role.ADMIN),
+  WalletController.getAllWallets
+);
+
 
 
 
