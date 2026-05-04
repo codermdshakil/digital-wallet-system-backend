@@ -87,8 +87,32 @@ const getSingleTransaction = catchAsync(async (req: Request, res: Response) => {
   }
 );
 
+const getAllTransactions = catchAsync(
+  async (req: Request, res: Response) => {
+
+    const user = req.user as JwtPayload;
+
+    if (!user || !user.userId) {
+      throw new AppError(401, "Unauthorized");
+    }
+
+    const result = await TransactionService.getAllTransactions(
+      req.query as Record<string, string>
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "All transactions retrieved successfully",
+      data: result,
+    });
+  }
+);
+
+
 export const TransactionController = {
   getMyTransactions,
   getSingleTransaction,
-  getAgentTransactions
+  getAgentTransactions,
+  getAllTransactions
 };

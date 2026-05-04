@@ -20,10 +20,17 @@ router.get(
 );
 
 router.get(
+  "/",
+  checkAuth(Role.ADMIN),
+  TransactionController.getAllTransactions
+);
+
+router.get(
   "/:id",
   checkAuth(Role.USER, Role.AGENT),
   TransactionController.getSingleTransaction
 );
+
 
 
 

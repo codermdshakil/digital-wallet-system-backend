@@ -113,9 +113,65 @@ const getAgentTransactions = async (
 };
 
 
+
+const getAllTransactions= async (query: any) => {
+  const {
+    page = 1, 
+    limit = 10,
+    type,
+    status,
+    from,
+    to,
+    search,
+  } = query;
+
+  const filter: any = {};
+
+  // 🔍 filter by type
+  if (type) {
+    filter.type = type;
+  }
+
+  // 🔍 filter by status
+  if (status) {
+    filter.status = status;
+  }
+
+  // 📅 date range
+  if (from || to) {
+    filter.createdAt = {};
+    if (from) filter.createdAt.$gte = new Date(from);
+    if (to) filter.createdAt.$lte = new Date(to);
+  }
+
+  // 🔎 search by transactionId
+  if (search) {
+    filter.transactionId = { $regex: search, $options: "i" };
+  }
+
+  const transactions = await Transaction.find(filter)
+    .sort({ createdAt: -1 })
+    .skip((Number(page) - 1) * Number(limit))
+    .limit(Number(limit))
+    .populate("senderWalletId receiverWalletId initiatedBy");
+
+  const total = await Transaction.countDocuments(filter);
+
+  return {
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+    },
+    data: transactions,
+  };
+};
+
+
 export const TransactionService = {
 
   getMyTransactions,
   getSingleTransaction,
-  getAgentTransactions
+  getAgentTransactions,
+  getAllTransactions
 }
