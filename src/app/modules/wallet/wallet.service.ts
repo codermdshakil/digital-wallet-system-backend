@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import AppError from "../../errorHandlers/AppError";
@@ -6,6 +7,7 @@ import {
   TransactionType,
 } from "../transaction/transaction.interface";
 import { Transaction } from "../transaction/transaction.model";
+import { Status } from "./wallet.interface";
 import { Wallet } from "./wallet.model";
 
 // User Wallet
@@ -415,6 +417,72 @@ const cashOut = async (payload: {
   }
 };
 
+
+// Admin wallet operations
+const blockWallet = async (walletId: string) => {
+
+  const wallet = await Wallet.findById(walletId);
+
+  if (!wallet) {
+    throw new AppError(404, "Wallet not found");
+  }
+
+  if (wallet.status === "BLOCKED") {
+    throw new AppError(400, "Wallet already blocked");
+  }
+
+  wallet.status = Status.BLOCKED;
+  await wallet.save();
+
+  return wallet;
+};
+
+const unblockWallet= async (walletId: string) => {
+  const wallet = await Wallet.findById(walletId);
+
+  if (!wallet) {
+    throw new AppError(404, "Wallet not found");
+  }
+
+  if (wallet.status === "ACTIVE") {
+    throw new AppError(400, "Wallet already active");
+  }
+
+  wallet.status = Status.ACTIVE;
+  await wallet.save();
+
+  return wallet;
+};
+
+
+const getAllWallets = async (query: any) => {
+
+  const { page = 1, limit = 10, status } = query;
+
+  const filter: any = {};
+
+  if (status) {
+    filter.status = status;
+  }
+
+  const wallets = await Wallet.find(filter)
+    .skip((Number(page) - 1) * Number(limit))
+    .limit(Number(limit))
+    .sort({ createdAt: -1 });
+
+  const total = await Wallet.countDocuments(filter);
+
+  return {
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+    },
+    data: wallets,
+  };
+};
+
+
 export const WalletService = {
   // User Wallet
   getMyWallet,
@@ -428,4 +496,10 @@ export const WalletService = {
   // Agent wallet Operations
   cashIn,
   cashOut,
+
+  // Admin wallet operations
+  blockWallet,
+  unblockWallet,
+  getAllWallets
+  
 };

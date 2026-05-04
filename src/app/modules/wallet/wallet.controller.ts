@@ -201,6 +201,46 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Admin wallet operation
+
+const blockWallet = catchAsync(async (req: Request, res: Response) => {
+  
+  const { id } = req.params;
+
+  const result = await WalletService.blockWallet(id as string);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Wallet blocked successfully",
+    data: result,
+  });
+});
+
+const unblockWallet = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const result = await WalletService.unblockWallet(id as string);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Wallet unblocked successfully",
+    data: result,
+  });
+});
+
+const getAllWallets = catchAsync(async (req: Request, res: Response) => {
+  const result = await WalletService.getAllWallets(req.query);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "All wallets retrieved successfully",
+    data: result,
+  });
+});
+
 
 export const WalletController = {
   
@@ -214,5 +254,10 @@ export const WalletController = {
 
   // Agent Wallet Operation
   cashIn,
-  cashOut
+  cashOut,
+
+  // Admin wallet operations
+  blockWallet,
+  unblockWallet,
+  getAllWallets
 };
